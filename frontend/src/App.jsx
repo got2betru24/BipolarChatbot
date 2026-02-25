@@ -376,11 +376,18 @@ function ChatInterface({ persona, sessionId, onReset }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
   const personaColor = PERSONA_COLORS[persona];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (!loading) {
+      inputRef.current?.focus();
+    }
+  }, [loading]);
 
   const sendMessage = async () => {
     const text = input.trim();
@@ -390,19 +397,44 @@ function ChatInterface({ persona, sessionId, onReset }) {
     setInput("");
     setLoading(true);
 
+    // Add an empty assistant message we'll fill in as chunks arrive
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch(`/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id: sessionId, message: text, stream: false }),
+        body: JSON.stringify({ session_id: sessionId, message: text, stream: true }),
       });
-      const data = await res.json();
-      setMessages((prev) => [...prev, { role: "assistant", content: data.response }]);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+
+        // Update the last message (the assistant one) by appending each chunk
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "assistant",
+            content: updated[updated.length - 1].content + chunk,
+          };
+          return updated;
+        });
+      }
     } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "⚡ Something went haywire. Try again." },
-      ]);
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: "⚡ Something went haywire. Try again.",
+        };
+        return updated;
+      });
     } finally {
       setLoading(false);
     }
@@ -608,6 +640,7 @@ function ChatInterface({ persona, sessionId, onReset }) {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={loading}
+            inputRef={inputRef}
             sx={{
               "& .MuiOutlinedInput-root": {
                 fontFamily: "'Syne', sans-serif",
