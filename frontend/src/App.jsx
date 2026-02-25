@@ -47,6 +47,18 @@ const PERSONA_COLORS = {
   custom: { bg: "#ffffff", text: "#111111" },
 };
 
+const PERSONA_WELCOME_MESSAGES = {
+  math_tutor: "Welcome! I'm here to guide you through math problems step by step. What are we working on today?",
+  foreign_language_tutor: "Bonjour! Hola! 你好! Tell me which language you're learning and we'll dive right in.",
+  history_tutor: "Welcome! I'm here to guide you through history. What are we learning today?",
+  historical_figure: "Ah, a visitor! I have lived through extraordinary times. What would you like to know about my era?",
+  code_writer: "Ready to write some clean code? Tell me the language and what we are building and we'll dive right in.",
+  interview_coach: "Let's get you ready. I'll ask you tough questions and give you honest feedback. What role are you interviewing for?",
+  pirate: "Ahoy there, matey! What brings ye aborad me ship?",
+  contrarian: "Oh great, another human who thinks they're right about everything. Go ahead, tell me your opinion.",
+  custom: "I'm ready. What's on your mind?",
+};
+
 const theme = createTheme({
   palette: {
     mode: "dark",
@@ -115,8 +127,12 @@ function GlitchText({ text }) {
   );
 }
 
-function Message({ role, content, personaColor }) {
+function Message({ role, content, personaColor, timestamp }) {
   const isUser = role === "user";
+  const timeString = timestamp
+    ? timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : "";
+
   return (
     <Box
       sx={{
@@ -125,6 +141,8 @@ function Message({ role, content, personaColor }) {
         mb: 2,
         gap: 1,
         alignItems: "flex-end",
+        // Reveal timestamp on hover via CSS
+        "&:hover .msg-timestamp": { opacity: 1 },
       }}
     >
       {!isUser && (
@@ -143,36 +161,55 @@ function Message({ role, content, personaColor }) {
           <PsychologyAltIcon fontSize="small" />
         </Avatar>
       )}
-      <Paper
-        elevation={0}
-        sx={{
-          px: 2.5,
-          py: 1.5,
-          maxWidth: "72%",
-          borderRadius: isUser ? "20px 20px 4px 20px" : "20px 20px 20px 4px",
-          background: isUser
-            ? "linear-gradient(135deg, #ff4081, #f50057)"
-            : "rgba(255,255,255,0.06)",
-          border: isUser ? "none" : "1px solid rgba(255,255,255,0.08)",
-          backdropFilter: "blur(10px)",
-          boxShadow: isUser
-            ? "0 4px 20px rgba(255,64,129,0.3)"
-            : "0 4px 20px rgba(0,0,0,0.2)",
-        }}
-      >
-        <Typography
-          variant="body1"
+
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: isUser ? "flex-end" : "flex-start", gap: 0.4 }}>
+        <Paper
+          elevation={0}
           sx={{
-            fontSize: "0.95rem",
-            lineHeight: 1.6,
-            color: isUser ? "#fff" : "rgba(255,255,255,0.9)",
-            whiteSpace: "pre-wrap",
-            fontFamily: "'Syne', sans-serif",
+            px: 2.5,
+            py: 1.5,
+            maxWidth: "100%",
+            borderRadius: isUser ? "20px 20px 4px 20px" : "20px 20px 20px 4px",
+            background: isUser
+              ? "linear-gradient(135deg, #ff4081, #f50057)"
+              : "rgba(255,255,255,0.06)",
+            border: isUser ? "none" : "1px solid rgba(255,255,255,0.08)",
+            backdropFilter: "blur(10px)",
+            boxShadow: isUser
+              ? "0 4px 20px rgba(255,64,129,0.3)"
+              : "0 4px 20px rgba(0,0,0,0.2)",
           }}
         >
-          {content}
+          <Typography
+            variant="body1"
+            sx={{
+              fontSize: "0.95rem",
+              lineHeight: 1.6,
+              color: isUser ? "#fff" : "rgba(255,255,255,0.9)",
+              whiteSpace: "pre-wrap",
+              fontFamily: "'Syne', sans-serif",
+            }}
+          >
+            {content}
+          </Typography>
+        </Paper>
+
+        {/* Timestamp — hidden until parent hover */}
+        <Typography
+          className="msg-timestamp"
+          sx={{
+            fontFamily: "'Syne Mono', monospace",
+            fontSize: "0.62rem",
+            color: "rgba(255,255,255,0.2)",
+            opacity: 0,
+            transition: "opacity 0.2s ease",
+            px: 0.5,
+          }}
+        >
+          {timeString}
         </Typography>
-      </Paper>
+      </Box>
+
       {isUser && (
         <Avatar
           sx={{
@@ -551,7 +588,13 @@ function PersonaSelector({ onSelect }) {
 }
 
 function ChatInterface({ persona, sessionId, onReset }) {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      content: PERSONA_WELCOME_MESSAGES[persona] ?? "Hello! How can I help you?",
+      timestamp: new Date(),
+    },
+  ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [usage, setUsage] = useState({ input_tokens: 0, output_tokens: 0, total_cost: 0 });
@@ -574,12 +617,19 @@ function ChatInterface({ persona, sessionId, onReset }) {
     const text = input.trim();
     if (!text || loading) return;
 
-    setMessages((prev) => [...prev, { role: "user", content: text }]);
+    // User message
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: text, timestamp: new Date() },
+    ]);
     setInput("");
     setLoading(true);
 
     // Add an empty assistant message we'll fill in as chunks arrive
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "assistant", content: "", timestamp: new Date() },
+    ]);
 
     try {
       const res = await fetch(`/api/chat`, {
@@ -775,7 +825,7 @@ function ChatInterface({ persona, sessionId, onReset }) {
         )}
 
         {messages.map((msg, i) => (
-          <Message key={i} role={msg.role} content={msg.content} personaColor={personaColor} />
+          <Message key={i} role={msg.role} content={msg.content} personaColor={personaColor} timestamp={msg.timestamp} />
         ))}
 
         {loading && (
