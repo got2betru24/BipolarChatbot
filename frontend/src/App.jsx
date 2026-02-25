@@ -44,6 +44,7 @@ const PERSONA_COLORS = {
   interview_coach: { bg: "#76ff03", text: "#1a2200" },
   pirate: { bg: "#ff6d00", text: "#1a0a00" },
   contrarian: { bg: "#ff1744", text: "#fff" },
+  custom: { bg: "#ffffff", text: "#111111" },
 };
 
 const theme = createTheme({
@@ -191,15 +192,27 @@ function Message({ role, content, personaColor }) {
   );
 }
 
+const TEMPERATURE_MODES = [
+  { label: "🎯 Factual", value: 0.2, description: "Precise and consistent" },
+  { label: "⚖️ Balanced", value: 0.5, description: "Mix of accuracy and creativity" },
+  { label: "🎨 Creative", value: 0.9, description: "Imaginative and varied" },
+];
+
 function PersonaSelector({ onSelect }) {
   const [selected, setSelected] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Custom persona state
+  const [showCustom, setShowCustom] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState("");
+  const [customTemp, setCustomTemp] = useState(0.5);
+  const [customLoading, setCustomLoading] = useState(false);
 
   const handleStart = async () => {
     if (!selected) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/sessions", {
+      const res = await fetch(`/api/sessions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ persona: selected }),
@@ -210,6 +223,29 @@ function PersonaSelector({ onSelect }) {
       console.error("Failed to create session:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCustomStart = async () => {
+    if (!customPrompt.trim()) return;
+    setCustomLoading(true);
+    try {
+      const res = await fetch(`/api/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5",
+          max_tokens: 1000,
+          system_prompt: customPrompt,
+          temperature: customTemp,
+        }),
+      });
+      const data = await res.json();
+      onSelect("custom", data.session_id);
+    } catch (err) {
+      console.error("Failed to create custom session:", err);
+    } finally {
+      setCustomLoading(false);
     }
   };
 
@@ -226,18 +262,6 @@ function PersonaSelector({ onSelect }) {
           "radial-gradient(ellipse at 20% 50%, rgba(255,64,129,0.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(0,229,255,0.1) 0%, transparent 60%)",
       }}
     >
-      {/* Decorative noise overlay */}
-      <Box
-        sx={{
-          position: "fixed",
-          inset: 0,
-          opacity: 0.03,
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-          pointerEvents: "none",
-          zIndex: 0,
-        }}
-      />
-
       <Box sx={{ position: "relative", zIndex: 1, textAlign: "center", mb: 6 }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1, mb: 1 }}>
           <BoltIcon sx={{ color: "#ff4081", fontSize: "2rem" }} />
@@ -273,6 +297,7 @@ function PersonaSelector({ onSelect }) {
           boxShadow: "0 25px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)",
         }}
       >
+        {/* ── Preset persona selector ── */}
         <FormControl fullWidth sx={{ mb: 4 }}>
           <InputLabel
             sx={{
@@ -289,15 +314,9 @@ function PersonaSelector({ onSelect }) {
             onChange={(e) => setSelected(e.target.value)}
             sx={{
               fontFamily: "'Syne', sans-serif",
-              "& .MuiOutlinedInput-notchedOutline": {
-                borderColor: "rgba(255,255,255,0.15)",
-              },
-              "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: "rgba(255,255,255,0.3)",
-              },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#ff4081",
-              },
+              "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.15)" },
+              "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.3)" },
+              "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#ff4081" },
             }}
           >
             {Object.entries(PERSONA_LABELS).map(([key, label]) => (
@@ -351,21 +370,181 @@ function PersonaSelector({ onSelect }) {
             background: selected
               ? `linear-gradient(135deg, ${PERSONA_COLORS[selected]?.bg || "#ff4081"}, #ff4081)`
               : "rgba(255,255,255,0.1)",
-            color: selected ? PERSONA_COLORS[selected]?.text || "#fff" : "rgba(255,255,255,0.3)",
+            color: selected
+              ? PERSONA_COLORS[selected]?.text || "#fff"
+              : "rgba(255,255,255,0.3)",
             borderRadius: 3,
             transition: "all 0.3s ease",
-            boxShadow: selected ? `0 8px 30px ${PERSONA_COLORS[selected]?.bg || "#ff4081"}55` : "none",
+            boxShadow: selected
+              ? `0 8px 30px ${PERSONA_COLORS[selected]?.bg || "#ff4081"}55`
+              : "none",
             "&:hover": {
               transform: "translateY(-2px)",
-              boxShadow: selected ? `0 12px 40px ${PERSONA_COLORS[selected]?.bg || "#ff4081"}77` : "none",
+              boxShadow: selected
+                ? `0 12px 40px ${PERSONA_COLORS[selected]?.bg || "#ff4081"}77`
+                : "none",
             },
-            "&:disabled": {
-              background: "rgba(255,255,255,0.05)",
-            },
+            "&:disabled": { background: "rgba(255,255,255,0.05)" },
           }}
         >
-          {loading ? <CircularProgress size={22} sx={{ color: "inherit" }} /> : "UNLEASH THE BOT →"}
+          {loading ? (
+            <CircularProgress size={22} sx={{ color: "inherit" }} />
+          ) : (
+            "UNLEASH THE BOT →"
+          )}
         </Button>
+
+        {/* ── Divider ── */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, my: 3 }}>
+          <Box sx={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.07)" }} />
+          <Typography
+            sx={{
+              fontSize: "0.7rem",
+              color: "rgba(255,255,255,0.2)",
+              fontFamily: "'Syne Mono', monospace",
+              letterSpacing: "0.2em",
+            }}
+          >
+            OR
+          </Typography>
+          <Box sx={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.07)" }} />
+        </Box>
+
+        {/* ── Custom persona toggle button ── */}
+        <Box sx={{ display: "flex", justifyContent: "center" }}>
+          <Button
+            size="small"
+            onClick={() => setShowCustom((v) => !v)}
+            sx={{
+              fontFamily: "'Syne Mono', monospace",
+              fontSize: "0.7rem",
+              letterSpacing: "0.1em",
+              color: "rgba(255,255,255,0.3)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 2,
+              px: 2,
+              py: 0.6,
+              textTransform: "uppercase",
+              transition: "all 0.2s ease",
+              "&:hover": {
+                color: "rgba(255,255,255,0.6)",
+                borderColor: "rgba(255,255,255,0.2)",
+                background: "rgba(255,255,255,0.04)",
+              },
+            }}
+          >
+            {showCustom ? "▲ hide custom bot" : "✦ build your own bot"}
+          </Button>
+        </Box>
+
+        {/* ── Custom persona form ── */}
+        {showCustom && (
+          <Box
+            sx={{
+              mt: 3,
+              p: 2.5,
+              borderRadius: 3,
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.07)",
+            }}
+          >
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              placeholder="Describe your bot's personality and purpose..."
+              value={customPrompt}
+              onChange={(e) => setCustomPrompt(e.target.value)}
+              sx={{
+                mb: 2,
+                "& .MuiOutlinedInput-root": {
+                  fontFamily: "'Syne', sans-serif",
+                  fontSize: "0.85rem",
+                  "& fieldset": { borderColor: "rgba(255,255,255,0.1)" },
+                  "&:hover fieldset": { borderColor: "rgba(255,255,255,0.2)" },
+                  "&.Mui-focused fieldset": { borderColor: "rgba(255,255,255,0.35)" },
+                },
+              }}
+            />
+
+            <FormControl fullWidth sx={{ mb: 2.5 }}>
+              <InputLabel
+                sx={{
+                  color: "rgba(255,255,255,0.4)",
+                  fontFamily: "'Syne Mono', monospace",
+                  fontSize: "0.8rem",
+                }}
+              >
+                Response style
+              </InputLabel>
+              <Select
+                value={customTemp}
+                label="Response style"
+                onChange={(e) => setCustomTemp(e.target.value)}
+                sx={{
+                  fontFamily: "'Syne', sans-serif",
+                  fontSize: "0.85rem",
+                  "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.1)" },
+                  "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.2)" },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "rgba(255,255,255,0.35)",
+                  },
+                }}
+              >
+                {TEMPERATURE_MODES.map((mode) => (
+                  <MenuItem key={mode.value} value={mode.value}>
+                    <Box>
+                      <Typography sx={{ fontFamily: "'Syne', sans-serif", fontSize: "0.9rem" }}>
+                        {mode.label}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontFamily: "'Syne Mono', monospace",
+                          fontSize: "0.7rem",
+                          color: "rgba(255,255,255,0.4)",
+                        }}
+                      >
+                        {mode.description}
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Button
+              fullWidth
+              variant="outlined"
+              size="small"
+              onClick={handleCustomStart}
+              disabled={!customPrompt.trim() || customLoading}
+              sx={{
+                py: 1,
+                fontFamily: "'Syne Mono', monospace",
+                fontWeight: 700,
+                fontSize: "0.75rem",
+                letterSpacing: "0.1em",
+                borderColor: "rgba(255,255,255,0.2)",
+                color: customPrompt.trim() ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.2)",
+                borderRadius: 2,
+                "&:hover": {
+                  borderColor: "rgba(255,255,255,0.4)",
+                  background: "rgba(255,255,255,0.05)",
+                },
+                "&:disabled": {
+                  borderColor: "rgba(255,255,255,0.07)",
+                  color: "rgba(255,255,255,0.15)",
+                },
+              }}
+            >
+              {customLoading ? (
+                <CircularProgress size={16} sx={{ color: "inherit" }} />
+              ) : (
+                "LAUNCH CUSTOM BOT →"
+              )}
+            </Button>
+          </Box>
+        )}
       </Paper>
     </Box>
   );
@@ -375,6 +554,8 @@ function ChatInterface({ persona, sessionId, onReset }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [usage, setUsage] = useState({ input_tokens: 0, output_tokens: 0, total_cost: 0 });
+  const [showSummary, setShowSummary] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const personaColor = PERSONA_COLORS[persona];
@@ -440,11 +621,22 @@ function ChatInterface({ persona, sessionId, onReset }) {
     }
   };
 
-  const handleReset = async () => {
+  const fetchUsage = async () => {
     try {
-      await fetch(`/api/sessions/${sessionId}`, { method: "DELETE" });
+      const res = await fetch(`/api/sessions/${sessionId}/usage`);
+      const data = await res.json();
+      setUsage(data.usage);
     } catch (_) { }
-    onReset();
+  };
+
+  // Fetch usage after each completed message
+  useEffect(() => {
+    if (!loading && messages.length > 0) fetchUsage();
+  }, [loading]);
+
+  const handleReset = async () => {
+    await fetchUsage();
+    setShowSummary(true);
   };
 
   const handleKeyDown = (e) => {
@@ -612,6 +804,47 @@ function ChatInterface({ persona, sessionId, onReset }) {
         <div ref={messagesEndRef} />
       </Box>
 
+      {/* Usage stat bar */}
+      <Box
+        sx={{
+          px: { xs: 2, md: 4 },
+          py: 0.75,
+          display: "flex",
+          justifyContent: "center",
+          gap: 3,
+          borderTop: "1px solid rgba(255,255,255,0.04)",
+          background: "rgba(10,10,15,0.6)",
+        }}
+      >
+        {[
+          { label: "in", value: usage.input_tokens?.toLocaleString() ?? "0" },
+          { label: "out", value: usage.output_tokens?.toLocaleString() ?? "0" },
+          { label: "cost", value: `$${usage.total_cost?.toFixed(4) ?? "0.0000"}` },
+        ].map(({ label, value }) => (
+          <Box key={label} sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
+            <Typography
+              sx={{
+                fontFamily: "'Syne Mono', monospace",
+                fontSize: "0.65rem",
+                color: "rgba(255,255,255,0.2)",
+                letterSpacing: "0.1em",
+              }}
+            >
+              {label}
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: "'Syne Mono', monospace",
+                fontSize: "0.75rem",
+                color: "rgba(255,255,255,0.45)",
+              }}
+            >
+              {value}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+
       {/* Input */}
       <Box
         sx={{
@@ -693,6 +926,171 @@ function ChatInterface({ persona, sessionId, onReset }) {
           ENTER to send · SHIFT+ENTER for new line
         </Typography>
       </Box>
+      <UsageSummaryModal
+        open={showSummary}
+        usage={usage}
+        persona={persona}
+        onConfirm={async () => {
+          setShowSummary(false);
+          try {
+            await fetch(`/api/sessions/${sessionId}`, { method: "DELETE" });
+          } catch (_) { }
+          onReset();
+        }}
+      />
+    </Box>
+  );
+}
+
+function UsageSummaryModal({ open, usage, persona, onConfirm }) {
+  const personaColor = PERSONA_COLORS[persona];
+
+  return (
+    <Box
+      sx={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 100,
+        display: open ? "flex" : "none",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(0,0,0,0.7)",
+        backdropFilter: "blur(8px)",
+      }}
+    >
+      <Paper
+        elevation={0}
+        sx={{
+          p: 4,
+          width: "100%",
+          maxWidth: 380,
+          mx: 3,
+          background: "rgba(18,18,28,0.98)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 4,
+          boxShadow: "0 30px 80px rgba(0,0,0,0.6)",
+          textAlign: "center",
+        }}
+      >
+        <Typography
+          sx={{
+            fontFamily: "'Syne Mono', monospace",
+            fontSize: "0.7rem",
+            letterSpacing: "0.3em",
+            color: "rgba(255,255,255,0.3)",
+            mb: 1,
+            textTransform: "uppercase",
+          }}
+        >
+          Session Complete
+        </Typography>
+
+        <Typography
+          sx={{
+            fontFamily: "'Syne Mono', monospace",
+            fontSize: "1.4rem",
+            fontWeight: 700,
+            color: "#fff",
+            mb: 0.5,
+          }}
+        >
+          {PERSONA_LABELS[persona]}
+        </Typography>
+
+        <Box
+          sx={{
+            mt: 3,
+            mb: 3,
+            p: 2.5,
+            borderRadius: 3,
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 1.5,
+          }}
+        >
+          {[
+            { label: "Input tokens", value: usage.input_tokens?.toLocaleString() },
+            { label: "Output tokens", value: usage.output_tokens?.toLocaleString() },
+            { label: "Input cost", value: `$${usage.input_cost?.toFixed(4) ?? "0.0000"}` },
+            { label: "Output cost", value: `$${usage.output_cost?.toFixed(4) ?? "0.0000"}` },
+          ].map(({ label, value }) => (
+            <Box key={label} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Typography
+                sx={{
+                  fontFamily: "'Syne Mono', monospace",
+                  fontSize: "0.75rem",
+                  color: "rgba(255,255,255,0.4)",
+                }}
+              >
+                {label}
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: "'Syne Mono', monospace",
+                  fontSize: "0.85rem",
+                  color: "rgba(255,255,255,0.8)",
+                }}
+              >
+                {value}
+              </Typography>
+            </Box>
+          ))}
+
+          <Box
+            sx={{
+              pt: 1.5,
+              mt: 0.5,
+              borderTop: "1px solid rgba(255,255,255,0.07)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: "'Syne Mono', monospace",
+                fontSize: "0.8rem",
+                color: "rgba(255,255,255,0.6)",
+                fontWeight: 700,
+              }}
+            >
+              Total cost
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: "'Syne Mono', monospace",
+                fontSize: "1.1rem",
+                fontWeight: 700,
+                color: personaColor?.bg || "#ff4081",
+                textShadow: `0 0 20px ${personaColor?.bg || "#ff4081"}88`,
+              }}
+            >
+              ${usage.total_cost?.toFixed(4) ?? "0.0000"}
+            </Typography>
+          </Box>
+        </Box>
+
+        <Button
+          fullWidth
+          onClick={onConfirm}
+          sx={{
+            py: 1.5,
+            fontFamily: "'Syne Mono', monospace",
+            fontWeight: 700,
+            fontSize: "0.85rem",
+            letterSpacing: "0.1em",
+            background: `linear-gradient(135deg, ${personaColor?.bg || "#ff4081"}, #ff4081)`,
+            color: personaColor?.text || "#fff",
+            borderRadius: 3,
+            boxShadow: `0 8px 30px ${personaColor?.bg || "#ff4081"}44`,
+            "&:hover": { transform: "translateY(-2px)" },
+          }}
+        >
+          SWITCH BOT →
+        </Button>
+      </Paper>
     </Box>
   );
 }
