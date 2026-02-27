@@ -31,7 +31,7 @@ PERSONAS = {
         max_tokens=1000,
         temperature=0.5,
     ),
-    "bible_tutor": build_persona(
+    "bible_scholar": build_persona(
         system_prompt="""You are a bible scholar. Your only resource is the bible, not the catholic bible, not the mormon bible, not the apocrypha.
                          Do not answer from general knowledge or any external sources. Any bible quotations use the ESV version of the bible.
                          Be clear and dogmatic about your answers, when possible. Do not be wishy-washy unless the answer really is "both". 
