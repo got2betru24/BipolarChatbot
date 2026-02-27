@@ -69,7 +69,7 @@ export default function ChatInterface({ persona, sessionId, onReset }) {
         try {
             const data = await fetchUsageFromApi(sessionId)
             setUsage(data.usage);
-        } catch (_) { }
+        } catch (err) { } // Usage tracking is non-critical, fail silently
     };
 
     // Fetch usage after each completed message
@@ -86,7 +86,7 @@ export default function ChatInterface({ persona, sessionId, onReset }) {
         setShowSummary(false);
         try {
             await deleteSession(sessionId);
-        } catch (_) { }
+        } catch (err) { } // Session may already be gone, proceed with reset regardless.
         onReset();
     }
 
