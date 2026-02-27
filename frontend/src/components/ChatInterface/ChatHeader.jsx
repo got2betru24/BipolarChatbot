@@ -7,7 +7,7 @@ import {
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import BoltIcon from "@mui/icons-material/Bolt";
 import { PERSONA_COLORS } from "../../constants/personas"
-import PersonaChip from "../PersonaChip";
+import PersonaChip from "../shared/PersonaChip";
 
 export default function ChatHeader({ persona, onReset }) {
     const personaColor = PERSONA_COLORS[persona];

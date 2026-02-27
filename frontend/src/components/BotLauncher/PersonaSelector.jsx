@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { PERSONA_LABELS, PERSONA_COLORS } from "../../constants/personas"
 import { createSession } from "../../api/sessions"
-import PersonaChip from "../PersonaChip";
+import PersonaChip from "../shared/PersonaChip";
 
 export default function PersonaSelector({ onSelect }) {
     const [selected, setSelected] = useState("");

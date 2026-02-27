@@ -22,9 +22,10 @@ A fullstack AI chatbot application that lets you spin up different Claude-powere
 | 🧮 Math Tutor | Guides students to solutions without giving answers directly | 0.2 |
 | 🌍 Foreign Language Tutor | Responds in the language you're learning and corrects mistakes | 0.3 |
 | 📜 History Tutor | Teaches history in a fun, engaing way | 0.5 |
-| 🗿 Historical Figure | Becomes a historical figure for you to chat with | 0.5 |
-| 💻 Code Writer | Writes clean, well-commented Python code | 0.2 |
+| 📖 Bible Tutor | Teaches the bible from a Biblical scholar perspective | 0.2 |
 | 💼 Interview Coach | Asks tough interview questions and critiques your answers | 0.4 |
+| 💻 Code Writer | Writes clean, well-commented Python code | 0.2 |
+| 🗿 Historical Figure | Assumes the role of a historical figure | 0.5 |
 | 🏴‍☠️ Pirate | Speaks in a kid-friendly pirate dialect | 0.9 |
 | 😈 Contrarian | Argues the opposite of everything you say | 1.0 |
 
@@ -61,7 +62,31 @@ A fullstack AI chatbot application that lets you spin up different Claude-powere
 │       └── models.py        # Pydantic models
 ├── frontend/
 │   └── src/
-│       └── App.jsx          # React frontend, persona selector, chat interface
+│       ├── api/
+│       │   ├── sessions.js                  # createSession, deleteSession, resetSession
+│       │   ├── chat.js                      # sendMessage (streaming)
+│       │   └── usage.js                     # fetchUsage
+│       ├── constants/
+│       │   ├── personas.js                  # PERSONA_LABELS, PERSONA_COLORS, PERSONA_WELCOME_MESSAGES
+│       │   └── temperature.js               # TEMPERATURE_MODES
+│       ├── components/
+│       │   ├── shared/
+│       │   │   └── PersonaChip.jsx          # Reusable persona chip (used in BotLauncher + ChatInterface)
+│       │   ├── BotLauncher/
+│       │   │   ├── BotLauncher.jsx          # Landing page orchestrator
+│       │   │   ├── PersonaHeader.jsx        # Glitch text title + subtitle
+│       │   │   ├── GlitchText.jsx           # Glitch text
+│       │   │   ├── PersonaSelector.jsx      # Preset persona dropdown + launch button
+│       │   │   └── CustomPersona.jsx        # Custom bot form + toggle
+│       │   └── ChatInterface/
+│       │       ├── ChatInterface.jsx        # Chat orchestrator, owns messages/loading/usage state
+│       │       ├── ChatHeader.jsx           # Top bar with persona chip + switch button
+│       │       ├── ChatInput.jsx            # Text field + send button + keyboard handling
+│       │       ├── MessageFeed.jsx          # Scrolling message list + typing indicator
+│       │       ├── Message.jsx              # Single message bubble with timestamp
+│       │       ├── UsageStatBar.jsx         # Live token + cost footer
+│       │       └── UsageSummaryModal.jsx    # Session summary modal on reset
+│       └── App.jsx                          # Root component, manages persona/sessionId state
 ├── Dockerfile
 ├── compose.yaml
 ├── .env

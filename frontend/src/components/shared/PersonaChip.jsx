@@ -1,7 +1,7 @@
 import {
     Chip,
 } from "@mui/material";
-import { PERSONA_LABELS, PERSONA_COLORS } from "../constants/personas"
+import { PERSONA_LABELS, PERSONA_COLORS } from "../../constants/personas"
 
 export default function PersonaChip({ persona, size = 'medium' }) {
     const label = PERSONA_LABELS[persona];
