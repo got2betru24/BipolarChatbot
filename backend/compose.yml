@@ -1,0 +1,28 @@
+services:
+  backend:
+    container_name: bipolarchatbot-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend-dev
+    volumes:
+      - ./app:/app/backend/app
+    env_file:
+      - .env
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bipolarchatbot-api.rule=Host(`bipolarchatbot.local`) && PathPrefix(`/api`)"
+      - "traefik.http.services.bipolarchatbot-api.loadbalancer.server.port=8000"
+      - "traefik.http.routers.bipolarchatbot-api.entrypoints=web"
+    expose:
+      - 8000
+    networks:
+      - traefik-network
+    restart: unless-stopped
+
+networks:
+  traefik-network:
+    external: true

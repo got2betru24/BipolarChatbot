@@ -1,18 +1,6 @@
 # Environment and secrets - never goes into the image
 .env
 
-# Python artifacts
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-
-# Virtual environments
-venv/
-.venv/
-env/
-
 # Node artifacts
 node_modules/
 frontend/node_modules/
@@ -29,7 +17,11 @@ docker-compose.yml
 # IDE
 .vscode/
 .idea/
+.devcontainer/
 
 # OS
 .DS_Store
 Thumbs.db
+
+# README
+*.md

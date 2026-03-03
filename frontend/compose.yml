@@ -1,0 +1,27 @@
+services:
+  frontend:
+    container_name: bipolarchatbot-frontend
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend-dev
+    volumes:
+      - ./:/app/frontend
+      - /app/frontend/node_modules
+    environment:
+      - VITE_API_BASE_URL=http://bipolarchatbot.local/api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bipolarchatbot-frontend.rule=Host(`bipolarchatbot.local`)"
+      - "traefik.http.routers.bipolarchatbot-frontend.priority=1"
+      - "traefik.http.services.bipolarchatbot-frontend.loadbalancer.server.port=5173"
+      - "traefik.http.routers.bipolarchatbot-frontend.entrypoints=web"
+    expose:
+      - 5173
+    networks:
+      - traefik-network
+    restart: unless-stopped
+
+networks:
+  traefik-network:
+    external: true
