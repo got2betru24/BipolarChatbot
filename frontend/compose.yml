@@ -1,6 +1,8 @@
+name: bipolarchatbot
 services:
   frontend:
     container_name: bipolarchatbot-frontend
+    image: bipolarchatbot-frontend
     build:
       context: .
       dockerfile: Dockerfile
