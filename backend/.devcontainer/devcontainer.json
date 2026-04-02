@@ -10,11 +10,7 @@
             "extensions": [
                 "ms-python.python",
                 "ms-python.vscode-pylance",
-                "charliermarsh.ruff",
-                // Docker visibility from inside the container
-                // "ms-azuretools.vscode-docker",
-                // General
-                "eamodio.gitlens"
+                "charliermarsh.ruff"
             ],
             "settings": {
                 // Point to the Python inside the container
